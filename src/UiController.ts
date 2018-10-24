@@ -24,13 +24,13 @@ export default class UIOverlay {
   private shiftDownFlag = false;
   private mouseOver     = false;
 
-  constructor(gridPaper: GridCanvas) {
+  constructor(gridCanvas: GridCanvas) {
     // Create UI Overlay
     this.container = document.createElement('div');
     this.container.style.position = 'relative';
     this.container.style.width = '100%';
     this.container.style.height = '100%';
-    gridPaper.container.appendChild(this.container);
+    gridCanvas.container.appendChild(this.container);
 
     // Horizontal dual range bar for scrolling
     let hbarContainer = document.createElement('div');
@@ -83,7 +83,7 @@ export default class UIOverlay {
     buttonContainer.style.zIndex = '1';
     let gridButton = this.gridButton = document.createElement('button');
     gridButton.className = 'grid-button';
-    if(gridPaper.showGrids) {
+    if(gridCanvas.showGrids) {
       gridButton.classList.add('grid-on');
     } else {
       gridButton.classList.add('grid-off');
@@ -106,8 +106,8 @@ export default class UIOverlay {
     gridButton.style.lineHeight = '120%';
     gridButton.style.textAlign = 'center';
     gridButton.addEventListener('click', (event) => {
-      gridPaper.showGrids = !gridPaper.showGrids;
-      if(gridPaper.showGrids)
+      gridCanvas.showGrids = !gridCanvas.showGrids;
+      if(gridCanvas.showGrids)
         gridButton.classList.replace('grid-off', 'grid-on');
       else
         gridButton.classList.replace('grid-on', 'grid-off');
@@ -124,8 +124,8 @@ export default class UIOverlay {
     this.container.appendChild(this.eventActiveArea);
 
     // Min differences of the range bars
-    let rx = gridPaper.canvas.width / (gridPaper.bound.maxX - gridPaper.bound.minX);
-    let ry = gridPaper.canvas.height / (gridPaper.bound.maxY - gridPaper.bound.minY);
+    let rx = gridCanvas.canvas.width / (gridCanvas.bound.maxX - gridCanvas.bound.minX);
+    let ry = gridCanvas.canvas.height / (gridCanvas.bound.maxY - gridCanvas.bound.minY);
     if (rx > ry) {
       this.horizontalBar.relativeMinDifference = 0.1 * rx / ry;
       this.horizontalBar.relativeMaxDifference = 1.0;
@@ -143,60 +143,60 @@ export default class UIOverlay {
     var syncViewByHorizontal = () => {
       let lower = this.horizontalBar.lowerRange;
       let upper = this.horizontalBar.upperRange;
-      let minX = lower * (gridPaper.bound.maxX - gridPaper.bound.minX) + gridPaper.bound.minX;
-      let maxX = upper * (gridPaper.bound.maxX - gridPaper.bound.minX) + gridPaper.bound.minX;
-      gridPaper.displayRect.setMinX(minX);
-      gridPaper.displayRect.setMaxX(maxX);
-      gridPaper.display();
+      let minX = lower * (gridCanvas.bound.maxX - gridCanvas.bound.minX) + gridCanvas.bound.minX;
+      let maxX = upper * (gridCanvas.bound.maxX - gridCanvas.bound.minX) + gridCanvas.bound.minX;
+      gridCanvas.displayRect.setMinX(minX);
+      gridCanvas.displayRect.setMaxX(maxX);
+      gridCanvas.display();
       // Calculate the veritcal bar
-      if (gridPaper.aspectLocked) {
-        let displayAspect = gridPaper.canvas.width / gridPaper.canvas.height;
+      if (gridCanvas.aspectLocked) {
+        let displayAspect = gridCanvas.canvas.width / gridCanvas.canvas.height;
         let verticalDiff = (maxX - minX) / displayAspect;
-        let verticalMid = (gridPaper.displayRect.minY + gridPaper.displayRect.maxY) / 2;
-        if (verticalMid - verticalDiff / 2 < gridPaper.bound.minY) {
-          gridPaper.displayRect.setMinY(gridPaper.bound.minY);
-          gridPaper.displayRect.setMaxY(gridPaper.bound.minY + verticalDiff);
-        } else if (verticalMid + verticalDiff / 2 > gridPaper.bound.maxY) {
-          gridPaper.displayRect.setMinY(gridPaper.bound.maxY - verticalDiff);
-          gridPaper.displayRect.setMaxY(gridPaper.bound.maxY);
+        let verticalMid = (gridCanvas.displayRect.minY + gridCanvas.displayRect.maxY) / 2;
+        if (verticalMid - verticalDiff / 2 < gridCanvas.bound.minY) {
+          gridCanvas.displayRect.setMinY(gridCanvas.bound.minY);
+          gridCanvas.displayRect.setMaxY(gridCanvas.bound.minY + verticalDiff);
+        } else if (verticalMid + verticalDiff / 2 > gridCanvas.bound.maxY) {
+          gridCanvas.displayRect.setMinY(gridCanvas.bound.maxY - verticalDiff);
+          gridCanvas.displayRect.setMaxY(gridCanvas.bound.maxY);
         } else {
-          gridPaper.displayRect.setMinY(verticalMid - verticalDiff / 2);
-          gridPaper.displayRect.setMaxY(verticalMid + verticalDiff / 2);
+          gridCanvas.displayRect.setMinY(verticalMid - verticalDiff / 2);
+          gridCanvas.displayRect.setMaxY(verticalMid + verticalDiff / 2);
         }
       }
       // Synchronize the changes to the scroll bars
-      this.verticalBar.setLowerRange((gridPaper.bound.maxY - gridPaper.displayRect.maxY) / (gridPaper.bound.maxY - gridPaper.bound.minY));
-      this.verticalBar.setUpperRange((gridPaper.bound.maxY - gridPaper.displayRect.minY) / (gridPaper.bound.maxY - gridPaper.bound.minY));
+      this.verticalBar.setLowerRange((gridCanvas.bound.maxY - gridCanvas.displayRect.maxY) / (gridCanvas.bound.maxY - gridCanvas.bound.minY));
+      this.verticalBar.setUpperRange((gridCanvas.bound.maxY - gridCanvas.displayRect.minY) / (gridCanvas.bound.maxY - gridCanvas.bound.minY));
     }
     var syncViewByVertical = () => {
       let lower = 1 - this.verticalBar.upperRange;
       let upper = 1 - this.verticalBar.lowerRange;
-      let minY = lower * (gridPaper.bound.maxY - gridPaper.bound.minY) + gridPaper.bound.minY;
-      let maxY = upper * (gridPaper.bound.maxY - gridPaper.bound.minY) + gridPaper.bound.minY;
-      gridPaper.displayRect.setMinY(minY);
-      gridPaper.displayRect.setMaxY(maxY);
+      let minY = lower * (gridCanvas.bound.maxY - gridCanvas.bound.minY) + gridCanvas.bound.minY;
+      let maxY = upper * (gridCanvas.bound.maxY - gridCanvas.bound.minY) + gridCanvas.bound.minY;
+      gridCanvas.displayRect.setMinY(minY);
+      gridCanvas.displayRect.setMaxY(maxY);
       // Calculate the vertical bar
-      if (gridPaper.aspectLocked) {
-        let displayAspect = gridPaper.canvas.width / gridPaper.canvas.height;
+      if (gridCanvas.aspectLocked) {
+        let displayAspect = gridCanvas.canvas.width / gridCanvas.canvas.height;
         let horizontalDiff = (maxY - minY) * displayAspect;
-        let horizontalMid = (gridPaper.displayRect.minX + gridPaper.displayRect.maxX) / 2;
-        if (horizontalMid - horizontalDiff / 2 < gridPaper.bound.minX) {
-          gridPaper.displayRect.setMinX(gridPaper.bound.minX);
-          gridPaper.displayRect.setMaxX(gridPaper.bound.minX + horizontalDiff);
-          gridPaper.display();
-        } else if (horizontalMid + horizontalDiff / 2 > gridPaper.bound.maxX) {
-          gridPaper.displayRect.setMinX(gridPaper.bound.maxX - horizontalDiff);
-          gridPaper.displayRect.setMaxX(gridPaper.bound.maxX);
-          gridPaper.display();
+        let horizontalMid = (gridCanvas.displayRect.minX + gridCanvas.displayRect.maxX) / 2;
+        if (horizontalMid - horizontalDiff / 2 < gridCanvas.bound.minX) {
+          gridCanvas.displayRect.setMinX(gridCanvas.bound.minX);
+          gridCanvas.displayRect.setMaxX(gridCanvas.bound.minX + horizontalDiff);
+          gridCanvas.display();
+        } else if (horizontalMid + horizontalDiff / 2 > gridCanvas.bound.maxX) {
+          gridCanvas.displayRect.setMinX(gridCanvas.bound.maxX - horizontalDiff);
+          gridCanvas.displayRect.setMaxX(gridCanvas.bound.maxX);
+          gridCanvas.display();
         } else {
-          gridPaper.displayRect.setMinX(horizontalMid - horizontalDiff / 2);
-          gridPaper.displayRect.setMaxX(horizontalMid + horizontalDiff / 2);
-          gridPaper.display();
+          gridCanvas.displayRect.setMinX(horizontalMid - horizontalDiff / 2);
+          gridCanvas.displayRect.setMaxX(horizontalMid + horizontalDiff / 2);
+          gridCanvas.display();
         }
       }
       // Synchronize the changes to the scroll bars
-      this.horizontalBar.setLowerRange((gridPaper.displayRect.minX - gridPaper.bound.minX) / (gridPaper.bound.maxX - gridPaper.bound.minX));
-      this.horizontalBar.setUpperRange((gridPaper.displayRect.maxX - gridPaper.bound.minX) / (gridPaper.bound.maxX - gridPaper.bound.minX));
+      this.horizontalBar.setLowerRange((gridCanvas.displayRect.minX - gridCanvas.bound.minX) / (gridCanvas.bound.maxX - gridCanvas.bound.minX));
+      this.horizontalBar.setUpperRange((gridCanvas.displayRect.maxX - gridCanvas.bound.minX) / (gridCanvas.bound.maxX - gridCanvas.bound.minX));
     }
 
     this.horizontalBar.addLowerRangeChangeCallback((val: number) => { syncViewByHorizontal(); });
@@ -205,12 +205,12 @@ export default class UIOverlay {
     this.verticalBar.addUpperRangeChangeCallback((val: number) => { syncViewByVertical(); });
 
     this.syncView = () => {
-      let boundWidth  = gridPaper.bound.maxX - gridPaper.bound.minX;
-      let boundHeight = gridPaper.bound.maxY - gridPaper.bound.minY;
-      let minX = (gridPaper.displayRect.minX - gridPaper.bound.minX)/boundWidth;
-      let maxX = (gridPaper.displayRect.maxX - gridPaper.bound.minX)/boundWidth;
-      let minY = (gridPaper.bound.maxY - gridPaper.displayRect.maxY)/boundHeight;
-      let maxY = (gridPaper.bound.maxY - gridPaper.displayRect.minY)/boundHeight;
+      let boundWidth  = gridCanvas.bound.maxX - gridCanvas.bound.minX;
+      let boundHeight = gridCanvas.bound.maxY - gridCanvas.bound.minY;
+      let minX = (gridCanvas.displayRect.minX - gridCanvas.bound.minX)/boundWidth;
+      let maxX = (gridCanvas.displayRect.maxX - gridCanvas.bound.minX)/boundWidth;
+      let minY = (gridCanvas.bound.maxY - gridCanvas.displayRect.maxY)/boundHeight;
+      let maxY = (gridCanvas.bound.maxY - gridCanvas.displayRect.minY)/boundHeight;
       this.horizontalBar.setLowerRange(minX);
       this.horizontalBar.setUpperRange(maxX);
       this.verticalBar.setLowerRange(minY);
@@ -245,24 +245,21 @@ export default class UIOverlay {
     this.eventActiveArea.addEventListener('wheel', (event) => {
       event.preventDefault();
 
-      let r = gridPaper.zoomFactor;
+      let r = gridCanvas.zoomFactor;
 
-      // Scaling 
-      // TODO: UiControlling
-      // if(this.altDownFlag) {
-      //   let pPos = gridPaper.paperProject.view.viewToProject(new paper.Point(event.offsetX, event.offsetY));
-      //   let d = event.deltaY/1000;
-      //   gridPaper.zoomDisplay(pPos, Math.exp(d));
-      // } else {
-      //   if(this.shiftDownFlag) {
-      //     let d = event.deltaY/r;
-      //     if(d === 0) d = event.deltaX/r;
-      //     gridPaper.scrollHorizontally(d);
-      //   } else {
-      //     let d = -event.deltaY/r;
-      //     gridPaper.scrollVertically(d);
-      //   }
-      // }
+      if(this.altDownFlag) {
+        // TODO: Mouse location to global location
+        // gridCanvas.zoomDisplay(pPos, Math.exp(d));
+      } else {
+        if(this.shiftDownFlag) {
+          let d = event.deltaY/r;
+          if(d === 0) d = event.deltaX/r;
+          gridCanvas.scrollHorizontally(d);
+        } else {
+          let d = -event.deltaY/r;
+          gridCanvas.scrollVertically(d);
+        }
+      }
     });
   }
 }
