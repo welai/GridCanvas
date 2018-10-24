@@ -38,5 +38,5 @@ function generateConfig(name) {
   return config;
 }
 
-module.exports = ['gridcanvs', 'gridcanvs.min'].map((name) => generateConfig(name));
+module.exports = ['gridcanvas', 'gridcanvas.min'].map((name) => generateConfig(name));
 
