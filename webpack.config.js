@@ -9,7 +9,7 @@ function generateConfig(name) {
       path: path.resolve(__dirname, 'dist'),
       filename: name + '.js',
       sourceMapFilename: name + '.map',
-      library: 'gridpaper',
+      library: 'gridcanvas',
       libraryTarget: 'umd'
     },
     resolve: {
@@ -38,5 +38,5 @@ function generateConfig(name) {
   return config;
 }
 
-module.exports = ['gridpaper', 'gridpaper.min'].map((name) => generateConfig(name));
+module.exports = ['gridcanvs', 'gridcanvs.min'].map((name) => generateConfig(name));
 

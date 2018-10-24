@@ -1,4 +1,4 @@
-import GridPaper from './GridPaper';
+import GridCanvas from './GridCanvas';
 import * as dual from 'dual-range-bar';
 import './style.css';
 
@@ -24,7 +24,7 @@ export default class UIOverlay {
   private shiftDownFlag = false;
   private mouseOver     = false;
 
-  constructor(gridPaper: GridPaper) {
+  constructor(gridPaper: GridCanvas) {
     // Create UI Overlay
     this.container = document.createElement('div');
     this.container.style.position = 'relative';
@@ -248,20 +248,21 @@ export default class UIOverlay {
       let r = gridPaper.zoomFactor;
 
       // Scaling 
-      if(this.altDownFlag) {
-        let pPos = gridPaper.paperProject.view.viewToProject(new paper.Point(event.offsetX, event.offsetY));
-        let d = event.deltaY/1000;
-        gridPaper.zoomDisplay(pPos, Math.exp(d));
-      } else {
-        if(this.shiftDownFlag) {
-          let d = event.deltaY/r;
-          if(d === 0) d = event.deltaX/r;
-          gridPaper.scrollHorizontally(d);
-        } else {
-          let d = -event.deltaY/r;
-          gridPaper.scrollVertically(d);
-        }
-      }
+      // TODO: UiControlling
+      // if(this.altDownFlag) {
+      //   let pPos = gridPaper.paperProject.view.viewToProject(new paper.Point(event.offsetX, event.offsetY));
+      //   let d = event.deltaY/1000;
+      //   gridPaper.zoomDisplay(pPos, Math.exp(d));
+      // } else {
+      //   if(this.shiftDownFlag) {
+      //     let d = event.deltaY/r;
+      //     if(d === 0) d = event.deltaX/r;
+      //     gridPaper.scrollHorizontally(d);
+      //   } else {
+      //     let d = -event.deltaY/r;
+      //     gridPaper.scrollVertically(d);
+      //   }
+      // }
     });
   }
 }
