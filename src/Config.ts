@@ -22,7 +22,7 @@ export interface Config {
 
 export var defaultConfig: Config = {
   elementID: 'preview',
-  gridSeries: [[10, 2], [50, 10], [100, 10]],
+  gridSeries: [[10, 2], [50, 10], [100, 10], [250, 50]],
   bound: { minX: -500, maxX: 1500, minY: -500, maxY: 1500 },
   majorGridDensity: 0.02,
   aspeckLocked: true,

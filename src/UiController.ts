@@ -2,11 +2,6 @@ import GridCanvas from './GridCanvas';
 import * as dual from 'dual-range-bar';
 import './style.css';
 
-// TODO: remove this line
-var testOutput = (str: string) => {
-  document.querySelector('#test-output').innerHTML = str;
-}
-
 export default class UIOverlay {
   /** UI Overlay Container */
   container: HTMLElement;
@@ -165,10 +160,11 @@ export default class UIOverlay {
       event.preventDefault();
 
       let r = gridCanvas.zoomFactor;
-
       if(this.altDownFlag) {
         // TODO: Mouse location to global location
-        // gridCanvas.zoomDisplay(pPos, Math.exp(d));
+        let d = event.deltaY;
+        let [x, y] = [event.offsetX, event.offsetY];
+        gridCanvas.zoomDisplay(gridCanvas.v2pX(x), gridCanvas.v2pY(y), Math.exp(d/400));
       } else {
         if(this.shiftDownFlag) {
           let d = event.deltaY/r;
