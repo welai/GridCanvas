@@ -1,6 +1,12 @@
 import { Config, defaultConfig } from './Config';
 import { Rect, GeometricRect } from './Rect';
 import UIOverlay from './UiController';
+import ResizeObserver from 'resize-observer-polyfill';
+
+// TODO: remove this line
+var testOutput = (str: string) => {
+  document.querySelector('#test-output').innerHTML = str;
+}
 
 // A user interface on canvas
 export default class GridCanvas {
@@ -58,6 +64,10 @@ export default class GridCanvas {
       // this.paperProject.view.matrix.ty = h * maxY / (maxY - minY);
       this.updateGridLines();
     }
+    testOutput(
+`<br>
+X range: ${Math.round(this.displayRect.minX)}, ${Math.round(this.displayRect.maxX)}; Y range: ${Math.round(this.displayRect.minY)}, ${Math.round(this.displayRect.maxY)}<br>
+display dY/dX: ${((this.displayRect.maxY - this.displayRect.minY)/(this.displayRect.maxX - this.displayRect.minX)).toFixed(2)}`);
   }
 
   constructor(config: Config) {
@@ -83,9 +93,13 @@ export default class GridCanvas {
     var resizeCallback = () => {
       this.canvas.width = this.container.clientWidth;
       this.canvas.height = this.container.clientHeight;
+      // TODO: Change displayRect
+      // TODO: Change controlling max 
     }
     resizeCallback();
-    this.canvas.addEventListener('resize', resizeCallback);
+    // Usage of ResizeObserver, see: https://wicg.github.io/ResizeObserver/
+    const ro = new ResizeObserver(resizeCallback);
+    ro.observe(this.canvas);
 
     let parent = this;
     // Display rect

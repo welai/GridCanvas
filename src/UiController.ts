@@ -2,6 +2,11 @@ import GridCanvas from './GridCanvas';
 import * as dual from 'dual-range-bar';
 import './style.css';
 
+// TODO: remove this line
+var testOutput = (str: string) => {
+  document.querySelector('#test-output').innerHTML = str;
+}
+
 export default class UIOverlay {
   /** UI Overlay Container */
   container: HTMLElement;
