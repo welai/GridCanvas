@@ -12,8 +12,6 @@ export default class UIOverlay {
   container: HTMLElement;
   /** This area lies below the UI components, and works as the event receiver */
   eventActiveArea: HTMLElement;
-  /** Synchronize UI components with the geometric properties */
-  syncView: () => void;
   /** Horizontal dual range bar */
   horizontalBar: dual.HRange;
   /** Vertical dual range bar */
@@ -23,6 +21,8 @@ export default class UIOverlay {
   /** Button to toggle grid display */
   gridButton: HTMLButtonElement;
 
+  // The grid canvas pointer (real bad practice)
+  private gridCanvas: GridCanvas;
   // Flags
   private ctrlDownFlag  = false;
   private altDownFlag   = false;
@@ -30,6 +30,8 @@ export default class UIOverlay {
   private mouseOver     = false;
 
   constructor(gridCanvas: GridCanvas) {
+    this.gridCanvas = gridCanvas;
+
     // Create UI Overlay
     this.container = document.createElement('div');
     this.container.style.position = 'relative';
@@ -120,6 +122,16 @@ export default class UIOverlay {
     buttonContainer.appendChild(gridButton);
     this.container.appendChild(buttonContainer);
 
+    this.updateDifferences();
+
+    this.horizontalBar.addLowerRangeChangeCallback((val: number) => { this.syncViewByHorizontal(); });
+    this.horizontalBar.addUpperRangeChangeCallback((val: number) => { this.syncViewByHorizontal(); });
+    this.verticalBar.addLowerRangeChangeCallback((val: number) => { this.syncViewByVertical(); });
+    this.verticalBar.addUpperRangeChangeCallback((val: number) => { this.syncViewByVertical(); });
+
+    // Binding preview window area events
+    var mac = false;
+    if(window.navigator.userAgent.search('Mac') > 0) mac = true;
     // Event active area
     this.eventActiveArea = document.createElement('div');
     this.eventActiveArea.style.position = 'relative';
@@ -127,106 +139,8 @@ export default class UIOverlay {
     this.eventActiveArea.style.height = '100%';
     this.eventActiveArea.style.zIndex = '0';
     this.container.appendChild(this.eventActiveArea);
-
-    // Min differences of the range bars
-    let rx = gridCanvas.canvas.width / (gridCanvas.bound.maxX - gridCanvas.bound.minX);
-    let ry = gridCanvas.canvas.height / (gridCanvas.bound.maxY - gridCanvas.bound.minY);
-    if (rx > ry) {
-      this.horizontalBar.relativeMinDifference = 0.1 * rx / ry;
-      this.horizontalBar.relativeMaxDifference = 1.0;
-      this.verticalBar.relativeMinDifference = 0.1;
-      this.verticalBar.relativeMaxDifference = 1.0 * ry / rx;
-    } else {
-      this.horizontalBar.relativeMinDifference = 0.1;
-      this.horizontalBar.relativeMaxDifference = 1.0 * rx / ry;
-      this.verticalBar.relativeMinDifference = 0.1 * ry / rx;
-      this.verticalBar.relativeMaxDifference = 1.0;
-    }
-
-    // Synchronize the display rect with the UI elements & v.v.
-    // But these function do not actually refresh the view
-    var syncViewByHorizontal = () => {
-      let lower = this.horizontalBar.lowerRange;
-      let upper = this.horizontalBar.upperRange;
-      let minX = lower * (gridCanvas.bound.maxX - gridCanvas.bound.minX) + gridCanvas.bound.minX;
-      let maxX = upper * (gridCanvas.bound.maxX - gridCanvas.bound.minX) + gridCanvas.bound.minX;
-      gridCanvas.displayRect.setMinX(minX);
-      gridCanvas.displayRect.setMaxX(maxX);
-      gridCanvas.display();
-      // Calculate the veritcal bar
-      if (gridCanvas.aspectLocked) {
-        let displayAspect = gridCanvas.canvas.width / gridCanvas.canvas.height;
-        let verticalDiff = (maxX - minX) / displayAspect;
-        let verticalMid = (gridCanvas.displayRect.minY + gridCanvas.displayRect.maxY) / 2;
-        if (verticalMid - verticalDiff / 2 < gridCanvas.bound.minY) {
-          gridCanvas.displayRect.setMinY(gridCanvas.bound.minY);
-          gridCanvas.displayRect.setMaxY(gridCanvas.bound.minY + verticalDiff);
-        } else if (verticalMid + verticalDiff / 2 > gridCanvas.bound.maxY) {
-          gridCanvas.displayRect.setMinY(gridCanvas.bound.maxY - verticalDiff);
-          gridCanvas.displayRect.setMaxY(gridCanvas.bound.maxY);
-        } else {
-          gridCanvas.displayRect.setMinY(verticalMid - verticalDiff / 2);
-          gridCanvas.displayRect.setMaxY(verticalMid + verticalDiff / 2);
-        }
-      }
-      // Synchronize the changes to the scroll bars
-      this.verticalBar.setLowerRange((gridCanvas.bound.maxY - gridCanvas.displayRect.maxY) / (gridCanvas.bound.maxY - gridCanvas.bound.minY));
-      this.verticalBar.setUpperRange((gridCanvas.bound.maxY - gridCanvas.displayRect.minY) / (gridCanvas.bound.maxY - gridCanvas.bound.minY));
-    }
-    var syncViewByVertical = () => {
-      let lower = 1 - this.verticalBar.upperRange;
-      let upper = 1 - this.verticalBar.lowerRange;
-      let minY = lower * (gridCanvas.bound.maxY - gridCanvas.bound.minY) + gridCanvas.bound.minY;
-      let maxY = upper * (gridCanvas.bound.maxY - gridCanvas.bound.minY) + gridCanvas.bound.minY;
-      gridCanvas.displayRect.setMinY(minY);
-      gridCanvas.displayRect.setMaxY(maxY);
-      // Calculate the vertical bar
-      if (gridCanvas.aspectLocked) {
-        let displayAspect = gridCanvas.canvas.width / gridCanvas.canvas.height;
-        let horizontalDiff = (maxY - minY) * displayAspect;
-        let horizontalMid = (gridCanvas.displayRect.minX + gridCanvas.displayRect.maxX) / 2;
-        if (horizontalMid - horizontalDiff / 2 < gridCanvas.bound.minX) {
-          gridCanvas.displayRect.setMinX(gridCanvas.bound.minX);
-          gridCanvas.displayRect.setMaxX(gridCanvas.bound.minX + horizontalDiff);
-          gridCanvas.display();
-        } else if (horizontalMid + horizontalDiff / 2 > gridCanvas.bound.maxX) {
-          gridCanvas.displayRect.setMinX(gridCanvas.bound.maxX - horizontalDiff);
-          gridCanvas.displayRect.setMaxX(gridCanvas.bound.maxX);
-          gridCanvas.display();
-        } else {
-          gridCanvas.displayRect.setMinX(horizontalMid - horizontalDiff / 2);
-          gridCanvas.displayRect.setMaxX(horizontalMid + horizontalDiff / 2);
-          gridCanvas.display();
-        }
-      }
-      // Synchronize the changes to the scroll bars
-      this.horizontalBar.setLowerRange((gridCanvas.displayRect.minX - gridCanvas.bound.minX) / (gridCanvas.bound.maxX - gridCanvas.bound.minX));
-      this.horizontalBar.setUpperRange((gridCanvas.displayRect.maxX - gridCanvas.bound.minX) / (gridCanvas.bound.maxX - gridCanvas.bound.minX));
-    }
-
-    this.horizontalBar.addLowerRangeChangeCallback((val: number) => { syncViewByHorizontal(); });
-    this.horizontalBar.addUpperRangeChangeCallback((val: number) => { syncViewByHorizontal(); });
-    this.verticalBar.addLowerRangeChangeCallback((val: number) => { syncViewByVertical(); });
-    this.verticalBar.addUpperRangeChangeCallback((val: number) => { syncViewByVertical(); });
-
-    this.syncView = () => {
-      let boundWidth  = gridCanvas.bound.maxX - gridCanvas.bound.minX;
-      let boundHeight = gridCanvas.bound.maxY - gridCanvas.bound.minY;
-      let minX = (gridCanvas.displayRect.minX - gridCanvas.bound.minX)/boundWidth;
-      let maxX = (gridCanvas.displayRect.maxX - gridCanvas.bound.minX)/boundWidth;
-      let minY = (gridCanvas.bound.maxY - gridCanvas.displayRect.maxY)/boundHeight;
-      let maxY = (gridCanvas.bound.maxY - gridCanvas.displayRect.minY)/boundHeight;
-      this.horizontalBar.setLowerRange(minX);
-      this.horizontalBar.setUpperRange(maxX);
-      this.verticalBar.setLowerRange(minY);
-      this.verticalBar.setUpperRange(maxY);
-    }
-
-    var mac = false;
-    if(window.navigator.userAgent.search('Mac') > 0) mac = true;
     this.eventActiveArea.addEventListener('mouseover', (event: MouseEvent) => this.mouseOver = true);
     this.eventActiveArea.addEventListener('mouseout', (event: MouseEvent) => this.mouseOver = false);
-    // Binding preview window area events
     window.addEventListener('keydown', (event) => {
       if(this.mouseOver) {
         if(event.key === 'Alt')   this.altDownFlag    = true;
@@ -266,5 +180,105 @@ export default class UIOverlay {
         }
       }
     });
+  }
+
+  /** Update min and max differences of dual range bars */
+  updateDifferences() {
+    const gridCanvas = this.gridCanvas;
+    // Min differences of the range bars
+    let rx = gridCanvas.canvas.width / (gridCanvas.bound.maxX - gridCanvas.bound.minX);
+    let ry = gridCanvas.canvas.height / (gridCanvas.bound.maxY - gridCanvas.bound.minY);
+    if (rx > ry) {
+      this.horizontalBar.relativeMinDifference = 0.1 * rx / ry;
+      this.horizontalBar.relativeMaxDifference = 1.0;
+      this.verticalBar.relativeMinDifference = 0.1;
+      this.verticalBar.relativeMaxDifference = 1.0 * ry / rx;
+    } else {
+      this.horizontalBar.relativeMinDifference = 0.1;
+      this.horizontalBar.relativeMaxDifference = 1.0 * rx / ry;
+      this.verticalBar.relativeMinDifference = 0.1 * ry / rx;
+      this.verticalBar.relativeMaxDifference = 1.0;
+    }
+  }
+
+  /** Synchronize UI components with the geometric properties */
+  syncView() {
+    const gridCanvas = this.gridCanvas;
+    let boundWidth  = gridCanvas.bound.maxX - gridCanvas.bound.minX;
+    let boundHeight = gridCanvas.bound.maxY - gridCanvas.bound.minY;
+    let minX = (gridCanvas.displayRect.minX - gridCanvas.bound.minX)/boundWidth;
+    let maxX = (gridCanvas.displayRect.maxX - gridCanvas.bound.minX)/boundWidth;
+    let minY = (gridCanvas.bound.maxY - gridCanvas.displayRect.maxY)/boundHeight;
+    let maxY = (gridCanvas.bound.maxY - gridCanvas.displayRect.minY)/boundHeight;
+    this.horizontalBar.setLowerRange(minX);
+    this.horizontalBar.setUpperRange(maxX);
+    this.verticalBar.setLowerRange(minY);
+    this.verticalBar.setUpperRange(maxY);
+  }
+
+  /** Synchronize the display rect with the UI elements & v.v. */
+  // But these function do not actually refresh the view
+  syncViewByHorizontal() {
+    const gridCanvas = this.gridCanvas;
+    let lower = this.horizontalBar.lowerRange;
+    let upper = this.horizontalBar.upperRange;
+    let minX = lower * (gridCanvas.bound.maxX - gridCanvas.bound.minX) + gridCanvas.bound.minX;
+    let maxX = upper * (gridCanvas.bound.maxX - gridCanvas.bound.minX) + gridCanvas.bound.minX;
+    gridCanvas.displayRect.setMinX(minX);
+    gridCanvas.displayRect.setMaxX(maxX);
+    // Calculate the veritcal bar
+    if (gridCanvas.aspectLocked) {
+      let displayAspect = gridCanvas.canvas.width / gridCanvas.canvas.height;
+      let verticalDiff = (maxX - minX) / displayAspect;
+      let verticalMid = (gridCanvas.displayRect.minY + gridCanvas.displayRect.maxY) / 2;
+      if (verticalMid - verticalDiff / 2 < gridCanvas.bound.minY) {
+        gridCanvas.displayRect.setMinY(gridCanvas.bound.minY);
+        gridCanvas.displayRect.setMaxY(gridCanvas.bound.minY + verticalDiff);
+        gridCanvas.display();
+      } else if (verticalMid + verticalDiff / 2 > gridCanvas.bound.maxY) {
+        gridCanvas.displayRect.setMinY(gridCanvas.bound.maxY - verticalDiff);
+        gridCanvas.displayRect.setMaxY(gridCanvas.bound.maxY);
+        gridCanvas.display();
+      } else {
+        gridCanvas.displayRect.setMinY(verticalMid - verticalDiff / 2);
+        gridCanvas.displayRect.setMaxY(verticalMid + verticalDiff / 2);
+        gridCanvas.display();
+      }
+    }
+    // Synchronize the changes to the scroll bars
+    this.verticalBar.setLowerRange((gridCanvas.bound.maxY - gridCanvas.displayRect.maxY) / (gridCanvas.bound.maxY - gridCanvas.bound.minY));
+    this.verticalBar.setUpperRange((gridCanvas.bound.maxY - gridCanvas.displayRect.minY) / (gridCanvas.bound.maxY - gridCanvas.bound.minY));
+  }
+  /** Synchronize the display rect with the UI elements & v.v. */
+  syncViewByVertical() {
+    const gridCanvas = this.gridCanvas;
+    let lower = 1 - this.verticalBar.upperRange;
+    let upper = 1 - this.verticalBar.lowerRange;
+    let minY = lower * (gridCanvas.bound.maxY - gridCanvas.bound.minY) + gridCanvas.bound.minY;
+    let maxY = upper * (gridCanvas.bound.maxY - gridCanvas.bound.minY) + gridCanvas.bound.minY;
+    gridCanvas.displayRect.setMinY(minY);
+    gridCanvas.displayRect.setMaxY(maxY);
+    // Calculate the vertical bar
+    if (gridCanvas.aspectLocked) {
+      let displayAspect = gridCanvas.canvas.width / gridCanvas.canvas.height;
+      let horizontalDiff = (maxY - minY) * displayAspect;
+      let horizontalMid = (gridCanvas.displayRect.minX + gridCanvas.displayRect.maxX) / 2;
+      if (horizontalMid - horizontalDiff / 2 < gridCanvas.bound.minX) {
+        gridCanvas.displayRect.setMinX(gridCanvas.bound.minX);
+        gridCanvas.displayRect.setMaxX(gridCanvas.bound.minX + horizontalDiff);
+        gridCanvas.display();
+      } else if (horizontalMid + horizontalDiff / 2 > gridCanvas.bound.maxX) {
+        gridCanvas.displayRect.setMinX(gridCanvas.bound.maxX - horizontalDiff);
+        gridCanvas.displayRect.setMaxX(gridCanvas.bound.maxX);
+        gridCanvas.display();
+      } else {
+        gridCanvas.displayRect.setMinX(horizontalMid - horizontalDiff / 2);
+        gridCanvas.displayRect.setMaxX(horizontalMid + horizontalDiff / 2);
+        gridCanvas.display();
+      }
+    }
+    // Synchronize the changes to the scroll bars
+    this.horizontalBar.setLowerRange((gridCanvas.displayRect.minX - gridCanvas.bound.minX) / (gridCanvas.bound.maxX - gridCanvas.bound.minX));
+    this.horizontalBar.setUpperRange((gridCanvas.displayRect.maxX - gridCanvas.bound.minX) / (gridCanvas.bound.maxX - gridCanvas.bound.minX));
   }
 }

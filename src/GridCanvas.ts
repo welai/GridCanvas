@@ -91,12 +91,28 @@ display dY/dX: ${((this.displayRect.maxY - this.displayRect.minY)/(this.displayR
     this.canvas.style.height = '100%';
     this.container.appendChild(this.canvas);
     var resizeCallback = () => {
-      this.canvas.width = this.container.clientWidth;
-      this.canvas.height = this.container.clientHeight;
-      // TODO: Change displayRect
-      // TODO: Change controlling max 
+      const [ oldWidth, oldHeight ] = [ this.canvas.width, this.canvas.height ];
+      const newWidth = this.canvas.width = this.container.clientWidth;
+      const newHeight = this.canvas.height = this.container.clientHeight;
+      // If the new width is larger than scaling with aspect fixed
+      if(newWidth > newHeight / oldHeight * oldWidth) {
+        // Make the display rect width fixed
+        let midY = (this.displayRect.minY + this.displayRect.maxY)/2;
+        let newDisplayHeight = (this.displayRect.maxX - this.displayRect.minX)/newWidth*newHeight;
+        this.displayRect.minY = midY - newDisplayHeight/2;
+        this.displayRect.maxY = midY + newDisplayHeight/2;
+      } else {
+        // Make the dispaly rect height fixed
+        let midX = (this.displayRect.minX + this.displayRect.maxX)/2;
+        let newDisplayWidth = (this.displayRect.maxY - this.displayRect.minY)/newHeight*newHeight;
+        this.displayRect.minX = midX - newDisplayWidth/2;
+        this.displayRect.maxX = midX + newDisplayWidth/2;
+      }
+      
+      this.uiOverlay.updateDifferences();
+      this.uiOverlay.syncView();
+      this.display();
     }
-    resizeCallback();
     // Usage of ResizeObserver, see: https://wicg.github.io/ResizeObserver/
     const ro = new ResizeObserver(resizeCallback);
     ro.observe(this.canvas);
