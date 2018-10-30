@@ -4,6 +4,8 @@ import UIOverlay from './UiController';
 import ResizeObserver from 'resize-observer-polyfill';
 
 // TODO: Add layers
+// TODO: Add more coord conversion functions
+// TODO: Refactor the constructor
 // A user interface on canvas
 export default class GridCanvas {
   // HTML elements
