@@ -81,6 +81,8 @@ export default class GridCanvas {
     this.canvas.style.width = '100%';
     this.canvas.style.height = '100%';
     this.container.appendChild(this.canvas);
+    this.canvas.width = this.canvas.clientWidth;
+    this.canvas.height = this.canvas.clientHeight;
     var resizeCallback = () => {
       const [ oldWidth, oldHeight ] = [ this.canvas.width, this.canvas.height ];
       const newWidth = this.canvas.width = this.container.clientWidth;
@@ -95,7 +97,7 @@ export default class GridCanvas {
       } else {
         // Make the dispaly rect height fixed
         let midX = (this.displayRect.minX + this.displayRect.maxX)/2;
-        let newDisplayWidth = (this.displayRect.maxY - this.displayRect.minY)/newHeight*newHeight;
+        let newDisplayWidth = (this.displayRect.maxY - this.displayRect.minY)/newHeight*newWidth;
         this.displayRect.minX = midX - newDisplayWidth/2;
         this.displayRect.maxX = midX + newDisplayWidth/2;
       }
@@ -110,7 +112,7 @@ export default class GridCanvas {
 
     let parent = this;
     // Display rect
-    (window as any).displayRect = this.displayRect = {
+    this.displayRect = {
       _minx: bound.minX, _maxx: bound.maxX, _maxy: bound.maxY,
       _miny: bound.maxY - (bound.maxX - bound.minX) / this.canvas.width * this.canvas.height,
       get minX() { return this._minx; },
@@ -143,6 +145,10 @@ export default class GridCanvas {
       setMinY(newVal: number) { this._miny = newVal; },
       setMaxY(newVal: number) { this._maxy = newVal; }
     };
+    if((bound.maxX - bound.minX)/(bound.maxY - bound.minY) > this.canvas.width/this.canvas.height) {
+      this.displayRect._maxy = bound.maxY;
+      this.displayRect._minx = bound.maxX - (bound.maxY - bound.minY) / this.canvas.height * this.canvas.width;
+    }
 
     // Bound rect
     this.bound = {
@@ -180,7 +186,6 @@ export default class GridCanvas {
 
     // Create UI overlay
     this.uiOverlay = new UIOverlay(this);
-
     this.display();
   }
 
@@ -269,6 +274,7 @@ export default class GridCanvas {
     this.displayRect.minY = expected.minY;
     this.displayRect.maxY = expected.maxY;
     this.uiOverlay.syncView();
+    this.display();
   }
 
   scrollHorizontally(offset: number) {
@@ -277,6 +283,7 @@ export default class GridCanvas {
     this.displayRect.minX += offset;
     this.displayRect.maxX += offset;
     this.uiOverlay.syncView();
+    this.display();
   }
 
   scrollVertically(offset: number) {
@@ -285,6 +292,7 @@ export default class GridCanvas {
     this.displayRect.minY += offset;
     this.displayRect.maxY += offset;
     this.uiOverlay.syncView();
+    this.display();
   }
 
   drawGridLines() {
