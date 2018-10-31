@@ -2,6 +2,10 @@ import GridCanvas from './GridCanvas';
 import * as dual from 'dual-range-bar';
 import './style.css';
 
+/**
+ * UI control elements
+ * @class
+ */
 export default class UIOverlay {
   /** UI Overlay Container */
   container: HTMLElement;

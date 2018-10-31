@@ -1,6 +1,11 @@
 import { Rect } from './Rect';
 
-// Configurations
+/**
+ * @property {number[number, number][]} gridSeries    A list of ordered pairs indicating the grid units to be drawn
+ * @property {Rect}   bound                           Coordinate limits
+ * @property {boolean} aspectLocked                   Toggling whether the aspect ratio of the view port should be locked
+ * @property {boolean} showGrid                       Show the grid layer or not
+ */
 export interface Config {
   /** 
    * A list of ordered pairs, indicating the grid units of the grid paper.

@@ -1,17 +1,26 @@
+/**
+ * @author  Celestial Phineas
+ * @license MIT
+ */
 import { Config, defaultConfig } from './Config';
 import { Rect, GeometricRect } from './Rect';
 import UIOverlay from './UiController';
 import ResizeObserver from 'resize-observer-polyfill';
 
-// TODO: TSDoc
-// A user interface on canvas
+/**
+ * GridCanvas is an experimental preview window in Cartesian system with friendly controls
+ * @class
+ * @property  aspectLocked  Toggle if the aspect ratio of the viewport is mutable
+ * @property  showGrids     Toggle grid display
+ */
 export default class GridCanvas {
   // HTML elements
-  /** Grid paper container, the div element to initialize on */
+  /** GridCanvas container, the div element to initialize on */
   container: HTMLElement;
-  /** UI control conponents */
+  /**  UI control conponents */
   uiOverlay: UIOverlay;
 
+  // Layers
   /** The layer on the top of the grid layer */
   upperLayer: HTMLCanvasElement;
   /**
@@ -80,6 +89,11 @@ export default class GridCanvas {
     this.redrawUpper(this.upperLayer.getContext('2d'));
   }
 
+  /**
+   * @constructor
+   * @param elementID   The element id of the div to initialize
+   * @param config      Configuration options
+   */
   constructor(elementID: string, config?: Config) {
     let bound = (config? config.bound : undefined) || defaultConfig.bound;
     this.gridSeries = (config? config.gridSeries : undefined) || defaultConfig.gridSeries;
@@ -228,8 +242,14 @@ export default class GridCanvas {
   }
 
   // View controlling
-  /** Scaling the display rectangle */
+  /**
+   * Scaling the display rectangle
+   * @param projectX    X coordinate in the project space
+   * @param projectY    Y coordinate in the project space
+   * @param scale       Zoom scale
+   */
   zoomDisplay(projectX: number, projectY: number, scale: number): void;
+  // Implementation
   zoomDisplay(...args: any[]) {
     // First case
     var x, y: number;
@@ -315,6 +335,10 @@ export default class GridCanvas {
     this.display();
   }
 
+  /**
+   * Scroll the view horizontally
+   * @param offset      Horizontal scrolling offset
+   */
   scrollHorizontally(offset: number) {
     if (this.displayRect.minX + offset < this.bound.minX) offset = this.bound.minX - this.displayRect.minX;
     if (this.displayRect.maxX + offset > this.bound.maxX) offset = this.bound.maxX - this.displayRect.maxX;
@@ -324,6 +348,10 @@ export default class GridCanvas {
     this.display();
   }
 
+  /**
+   * Scroll the view vertically
+   * @param offset      Vertically scrolling offset
+   */
   scrollVertically(offset: number) {
     if (this.displayRect.minY + offset < this.bound.minY) offset = this.bound.minY - this.displayRect.minY;
     if (this.displayRect.maxY + offset > this.bound.maxY) offset = this.bound.maxY - this.displayRect.maxY;
@@ -391,26 +419,48 @@ export default class GridCanvas {
       ctx.fillRect(firstMajorVLineX + i * maxViewDiff - this.majorGridWidth/2, 0, this.majorGridWidth, h);
     }
   }
-
-  /** Convert the X coordinate in the view to the project coordinate */
+  /**
+   * Convert the X coordinate in the view to the project coordinate
+   * @param viewX       X coordinate in the viewport
+   */
   v2pX(viewX: number): number {
     return viewX/this.gridLayer.width*(this.displayRect.maxX - this.displayRect.minX) + this.displayRect.minX;
   }
-  /** Convert the Y coordinate in the view to the project coordinate */
+  /**
+   * Convert the Y coordinate in the view to the project coordinate
+   * @param viewY       Y coordinate in the viewport
+   */
   v2pY(viewY: number): number {
     return this.displayRect.maxY - viewY/this.gridLayer.height*(this.displayRect.maxY - this.displayRect.minY);
   }
-  /** Convert the Y coordinate in the project to the view coordinate */
+  /** 
+   * Convert the Y coordinate in the project to the view coordinate
+   * @param projectX    X coordinate in the project space
+   */
   p2vX(projectX: number): number {
     return (projectX - this.displayRect.minX)/(this.displayRect.maxX - this.displayRect.minX)*this.gridLayer.width;
   }
-  /** Convert the Y coordinate in the project to the view coordinate */
+  /** 
+   * Convert the Y coordinate in the project to the view coordinate
+   * @param projectY    Y coordinate in the project space
+   */
   p2vY(projectY: number): number {
     return (this.displayRect.maxY - projectY)/(this.displayRect.maxY - this.displayRect.minY) * this.gridLayer.height;
   }
-  /** Convert the project coordinate to the view coordinate */
+  /**
+   * Convert the project coordinate to the view coordinate
+   * @param x           X coordinate in the project space
+   * @param y           Y coordinate in the project space
+   * @returns {[number, number]} The result coordinate in an array
+   */
   projectToView(x: number, y: number): [number, number];
+  /**
+   * Convert the project coordinate to the view coordinate 
+   * @param xy          Project coordinate in array
+   * @returns {[number, number]} The result coordinate in an array
+   */
   projectToView(xy: number[]): [number, number];
+  // Implementation
   projectToView(...args: any[]): [number, number] {
     var x, y: number;
     if(typeof args[0] === 'number') {
@@ -424,9 +474,20 @@ export default class GridCanvas {
     }
     return [this.p2vX(x), this.p2vY(y)];
   }
-  /** Convert the view coordinate to the project coordinate */
+  /**
+   * Convert the view coordinate to the project coordinate
+   * @param x           X coordinate in the viewport
+   * @param y           Y coordinate in the viewport
+   * @returns {[number, number]} The result coordinate in an array
+   */
   viewToProject(x: number, y: number): [number, number];
+  /**
+   * Convert the view coordinate to the project coordinate
+   * @param xy          Project coordinate in array
+   * @returns {[number, number]} The result coordinate in an array
+   */
   viewToProject(xy: number[]): [number, number];
+  // Implementation
   viewToProject(...args: any[]): [number, number] {
     var x, y: number;
     if(typeof args[0] === 'number') {
@@ -441,8 +502,11 @@ export default class GridCanvas {
     return [this.v2pX(x), this.v2pY(y)];
   }
 
+  /** Remove the constructed elements */
   destruct(): void {
     this.container.removeChild(this.uiOverlay.container);
     this.container.removeChild(this.gridLayer);
+    this.container.removeChild(this.upperLayer);
+    this.container.removeChild(this.lowerLayer);
   }
 };  
