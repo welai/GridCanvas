@@ -182,8 +182,8 @@ export default class UIOverlay {
   updateDifferences() {
     const gridCanvas = this.gridCanvas;
     // Min differences of the range bars
-    let rx = gridCanvas.canvas.width / (gridCanvas.bound.maxX - gridCanvas.bound.minX);
-    let ry = gridCanvas.canvas.height / (gridCanvas.bound.maxY - gridCanvas.bound.minY);
+    let rx = gridCanvas.gridLayer.width / (gridCanvas.bound.maxX - gridCanvas.bound.minX);
+    let ry = gridCanvas.gridLayer.height / (gridCanvas.bound.maxY - gridCanvas.bound.minY);
     if (rx > ry) {
       this.horizontalBar.relativeMinDifference = 0.1 * rx / ry;
       this.horizontalBar.relativeMaxDifference = 1.0;
@@ -224,7 +224,7 @@ export default class UIOverlay {
     gridCanvas.displayRect.setMaxX(maxX);
     // Calculate the veritcal bar
     if (gridCanvas.aspectLocked) {
-      let displayAspect = gridCanvas.canvas.width / gridCanvas.canvas.height;
+      let displayAspect = gridCanvas.gridLayer.width / gridCanvas.gridLayer.height;
       let verticalDiff = (maxX - minX) / displayAspect;
       let verticalMid = (gridCanvas.displayRect.minY + gridCanvas.displayRect.maxY) / 2;
       if (verticalMid - verticalDiff / 2 < gridCanvas.bound.minY) {
@@ -256,7 +256,7 @@ export default class UIOverlay {
     gridCanvas.displayRect.setMaxY(maxY);
     // Calculate the vertical bar
     if (gridCanvas.aspectLocked) {
-      let displayAspect = gridCanvas.canvas.width / gridCanvas.canvas.height;
+      let displayAspect = gridCanvas.gridLayer.width / gridCanvas.gridLayer.height;
       let horizontalDiff = (maxY - minY) * displayAspect;
       let horizontalMid = (gridCanvas.displayRect.minX + gridCanvas.displayRect.maxX) / 2;
       if (horizontalMid - horizontalDiff / 2 < gridCanvas.bound.minX) {

@@ -3,9 +3,7 @@ import { Rect, GeometricRect } from './Rect';
 import UIOverlay from './UiController';
 import ResizeObserver from 'resize-observer-polyfill';
 
-// TODO: Add layers
-// TODO: Add more coord conversion functions
-// TODO: Refactor the constructor
+// TODO: TSDoc
 // A user interface on canvas
 export default class GridCanvas {
   // HTML elements
@@ -13,8 +11,25 @@ export default class GridCanvas {
   container: HTMLElement;
   /** UI control conponents */
   uiOverlay: UIOverlay;
-  /** Canvas to draw */
-  canvas: HTMLCanvasElement;
+
+  /** The layer on the top of the grid layer */
+  upperLayer: HTMLCanvasElement;
+  /**
+   * Redraw function of the upper layer
+   * You can modify this function by re-defining it
+   * The redraw function is called when the viewport is changed
+   */
+  redrawUpper(ctx: CanvasRenderingContext2D): void {}
+  /** The grid layer of the window, in essence an HTML canvas element */
+  gridLayer: HTMLCanvasElement;
+  /** The layer on the bottom of the grid layer */
+  lowerLayer: HTMLCanvasElement;
+  /**
+   * Redraw function of the lower layer
+   * You can modify this function by re-defining it
+   * The redraw function is called when the viewport is changed
+   */
+  redrawLower(ctx: CanvasRenderingContext2D): void {}
 
   // Geometric properties
   /** The coordinary boundary of the project */
@@ -60,35 +75,56 @@ export default class GridCanvas {
       this.displayRect.minY,
       this.displayRect.maxY
     ];
+    this.redrawLower(this.lowerLayer.getContext('2d'));
     this.drawGridLines();
+    this.redrawUpper(this.upperLayer.getContext('2d'));
   }
 
-  constructor(config: Config) {
-    let bound = config.bound || defaultConfig.bound;
-    this.gridSeries = config.gridSeries || defaultConfig.gridSeries;
-    this.majorGridDensity = config.majorGridDensity || defaultConfig.majorGridDensity;
-    this.aspectLock = config.aspeckLocked || defaultConfig.aspeckLocked;
-    this.showGridsFlag = config.showGrid || defaultConfig.showGrid;
+  constructor(elementID: string, config?: Config) {
+    let bound = (config? config.bound : undefined) || defaultConfig.bound;
+    this.gridSeries = (config? config.gridSeries : undefined) || defaultConfig.gridSeries;
+    this.majorGridDensity = (config? config.majorGridDensity : undefined) || defaultConfig.majorGridDensity;
+    this.aspectLock = (config? config.aspeckLocked : undefined) || defaultConfig.aspeckLocked;
+    this.showGridsFlag = (config? config.showGrid : undefined) || defaultConfig.showGrid;
 
     // UI and canvas container
-    var container = document.getElementById(config.elementID);
+    var container = document.getElementById(elementID);
     this.container = container;
     this.container.style.textAlign = 'left';
     this.container.style.position = 'relative';
 
+    // Create lower layer
+    this.lowerLayer = document.createElement('canvas');
+    this.lowerLayer.style.position = 'absolute';
+    this.lowerLayer.id = (this.container.id||'preview-container') + '-upper';
+    this.lowerLayer.style.width = '100%';
+    this.lowerLayer.style.height = '100%';
+    this.container.appendChild(this.lowerLayer);
+    this.lowerLayer.width = this.lowerLayer.clientWidth;
+    this.lowerLayer.height = this.lowerLayer.clientHeight;
     // Create canvas
-    this.canvas = document.createElement('canvas');
-    this.canvas.style.position = 'absolute';
-    this.canvas.id = (this.container.id ? this.container.id : 'preview-container') + '-canvas';
-    this.canvas.style.width = '100%';
-    this.canvas.style.height = '100%';
-    this.container.appendChild(this.canvas);
-    this.canvas.width = this.canvas.clientWidth;
-    this.canvas.height = this.canvas.clientHeight;
+    this.gridLayer = document.createElement('canvas');
+    this.gridLayer.style.position = 'absolute';
+    this.gridLayer.id = (this.container.id||'preview-container') + '-canvas';
+    this.gridLayer.style.width = '100%';
+    this.gridLayer.style.height = '100%';
+    this.container.appendChild(this.gridLayer);
+    this.gridLayer.width = this.gridLayer.clientWidth;
+    this.gridLayer.height = this.gridLayer.clientHeight;
+    // Create upper layer
+    this.upperLayer = document.createElement('canvas');
+    this.upperLayer.style.position = 'absolute';
+    this.upperLayer.id = (this.container.id||'preview-container') + '-upper';
+    this.upperLayer.style.width = '100%';
+    this.upperLayer.style.height = '100%';
+    this.container.appendChild(this.upperLayer);
+    this.upperLayer.width = this.upperLayer.clientWidth;
+    this.upperLayer.height = this.upperLayer.clientHeight;
+
     var resizeCallback = () => {
-      const [ oldWidth, oldHeight ] = [ this.canvas.width, this.canvas.height ];
-      const newWidth = this.canvas.width = this.container.clientWidth;
-      const newHeight = this.canvas.height = this.container.clientHeight;
+      const [ oldWidth, oldHeight ] = [ this.gridLayer.width, this.gridLayer.height ];
+      const newWidth = this.upperLayer.width = this.lowerLayer.width = this.gridLayer.width = this.container.clientWidth;
+      const newHeight = this.upperLayer.width = this.lowerLayer.width = this.gridLayer.height = this.container.clientHeight;
       // If the new width is larger than scaling with aspect fixed
       if(newWidth > newHeight / oldHeight * oldWidth) {
         // Make the display rect width fixed
@@ -110,13 +146,13 @@ export default class GridCanvas {
     }
     // Usage of ResizeObserver, see: https://wicg.github.io/ResizeObserver/
     const ro = new ResizeObserver(resizeCallback);
-    ro.observe(this.canvas);
+    ro.observe(this.gridLayer);
 
     let parent = this;
     // Display rect
     this.displayRect = {
       _minx: bound.minX, _maxx: bound.maxX, _maxy: bound.maxY,
-      _miny: bound.maxY - (bound.maxX - bound.minX) / this.canvas.width * this.canvas.height,
+      _miny: bound.maxY - (bound.maxX - bound.minX) / this.gridLayer.width * this.gridLayer.height,
       get minX() { return this._minx; },
       get maxX() { return this._maxx; },
       get minY() { return this._miny; },
@@ -147,9 +183,9 @@ export default class GridCanvas {
       setMinY(newVal: number) { this._miny = newVal; },
       setMaxY(newVal: number) { this._maxy = newVal; }
     };
-    if((bound.maxX - bound.minX)/(bound.maxY - bound.minY) > this.canvas.width/this.canvas.height) {
+    if((bound.maxX - bound.minX)/(bound.maxY - bound.minY) > this.gridLayer.width/this.gridLayer.height) {
       this.displayRect._maxy = bound.maxY;
-      this.displayRect._minx = bound.maxX - (bound.maxY - bound.minY) / this.canvas.height * this.canvas.width;
+      this.displayRect._minx = bound.maxX - (bound.maxY - bound.minY) / this.gridLayer.height * this.gridLayer.width;
     }
 
     // Bound rect
@@ -231,7 +267,7 @@ export default class GridCanvas {
       expected.maxY += d;
       if (expected.maxY > this.bound.maxY) {
         expected.maxY = this.bound.maxX;
-        let expectedDx = (this.bound.maxY - this.bound.minY) / this.canvas.height * this.canvas.width;
+        let expectedDx = (this.bound.maxY - this.bound.minY) / this.gridLayer.height * this.gridLayer.width;
         let diff = expectedDx - (expected.maxX - expected.minX);
         expected.maxX += diff / 2; expected.minX -= diff / 2;
       }
@@ -242,7 +278,7 @@ export default class GridCanvas {
       expected.minY -= d;
       if (expected.minY < this.bound.minY) {
         expected.minY = this.bound.minY;
-        let expectedDx = (this.bound.maxY - this.bound.minY) / this.canvas.height * this.canvas.width;
+        let expectedDx = (this.bound.maxY - this.bound.minY) / this.gridLayer.height * this.gridLayer.width;
         let diff = expectedDx - (expected.maxX - expected.minX);
         expected.minX += diff / 2; expected.minX -= diff / 2;
       }
@@ -253,7 +289,7 @@ export default class GridCanvas {
       expected.maxX += d;
       if (expected.maxX > this.bound.maxX) {
         expected.maxX = this.bound.maxX;
-        let expectedDy = (this.bound.maxX - this.bound.minX) / this.canvas.width * this.canvas.height;
+        let expectedDy = (this.bound.maxX - this.bound.minX) / this.gridLayer.width * this.gridLayer.height;
         let diff = expectedDy - (expected.maxY - expected.minY);
         expected.maxY += diff / 2; expected.minY -= diff / 2;
       }
@@ -264,7 +300,7 @@ export default class GridCanvas {
       expected.minX -= d;
       if (expected.minX < this.bound.minX) {
         expected.minX = this.bound.minX;
-        let expectedDy = (this.bound.maxX - this.bound.minX) / this.canvas.width * this.canvas.height;
+        let expectedDy = (this.bound.maxX - this.bound.minX) / this.gridLayer.width * this.gridLayer.height;
         let diff = expectedDy - (expected.maxY - expected.minY);
         expected.maxY += diff / 2; expected.minY -= diff / 2;
       }
@@ -297,15 +333,15 @@ export default class GridCanvas {
     this.display();
   }
 
-  drawGridLines() {
-    let ctx = this.canvas.getContext('2d');
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  private drawGridLines() {
+    let ctx = this.gridLayer.getContext('2d');
+    ctx.clearRect(0, 0, this.gridLayer.width, this.gridLayer.height);
     if(!this.showGridsFlag) return;
 
     // Number of max horizontal grid lines
-    let nMaxHorizontal = Math.ceil(this.majorGridDensity * this.canvas.height);
+    let nMaxHorizontal = Math.ceil(this.majorGridDensity * this.gridLayer.height);
     // Number of max vertical grid lines
-    let nMaxVertical = Math.ceil(this.majorGridDensity * this.canvas.width);
+    let nMaxVertical = Math.ceil(this.majorGridDensity * this.gridLayer.width);
     // Check if the grid series is useable
     const checkGridUseability = (a: number[]) => {
       let max = Math.max.apply(this, a);
@@ -331,9 +367,9 @@ export default class GridCanvas {
       }
     }
 
-    let [w, h] = [this.canvas.width, this.canvas.height];
+    let [w, h] = [this.gridLayer.width, this.gridLayer.height];
     let minProjectDiff = Math.min.apply(this, useableGrid);
-    let minViewDiff = Math.min.apply(this, useableGrid)/(this.displayRect.maxX - this.displayRect.minX)*this.canvas.width;
+    let minViewDiff = Math.min.apply(this, useableGrid)/(this.displayRect.maxX - this.displayRect.minX)*this.gridLayer.width;
     let firstMinorHLineY = this.p2vY(Math.ceil(this.displayRect.minY / minProjectDiff) * minProjectDiff);
     ctx.fillStyle = this.minorGridColor;
     for(let i = 0; i < nHMinorGridLines; i++) {
@@ -344,7 +380,7 @@ export default class GridCanvas {
       ctx.fillRect(firstMinorVLineX + i * minViewDiff - this.minorGridWidth/2, 0, this.minorGridWidth, h);
     }
     let maxProjectDiff = Math.max.apply(this, useableGrid);
-    let maxViewDiff = Math.max.apply(this, useableGrid)/(this.displayRect.maxX - this.displayRect.minX)*this.canvas.width;
+    let maxViewDiff = Math.max.apply(this, useableGrid)/(this.displayRect.maxX - this.displayRect.minX)*this.gridLayer.width;
     let firstMajorHLineY = this.p2vY(Math.ceil(this.displayRect.minY / maxProjectDiff) * maxProjectDiff);
     ctx.fillStyle = this.majorGridColor;
     for(let i = 0; i < nHMajorGridLines; i++) {
@@ -356,21 +392,57 @@ export default class GridCanvas {
     }
   }
 
+  /** Convert the X coordinate in the view to the project coordinate */
   v2pX(viewX: number): number {
-    return viewX/this.canvas.width*(this.displayRect.maxX - this.displayRect.minX) + this.displayRect.minX;
+    return viewX/this.gridLayer.width*(this.displayRect.maxX - this.displayRect.minX) + this.displayRect.minX;
   }
+  /** Convert the Y coordinate in the view to the project coordinate */
   v2pY(viewY: number): number {
-    return this.displayRect.maxY - viewY/this.canvas.height*(this.displayRect.maxY - this.displayRect.minY);
+    return this.displayRect.maxY - viewY/this.gridLayer.height*(this.displayRect.maxY - this.displayRect.minY);
   }
+  /** Convert the Y coordinate in the project to the view coordinate */
   p2vX(projectX: number): number {
-    return (projectX - this.displayRect.minX)/(this.displayRect.maxX - this.displayRect.minX)*this.canvas.width;
+    return (projectX - this.displayRect.minX)/(this.displayRect.maxX - this.displayRect.minX)*this.gridLayer.width;
   }
+  /** Convert the Y coordinate in the project to the view coordinate */
   p2vY(projectY: number): number {
-    return (this.displayRect.maxY - projectY)/(this.displayRect.maxY - this.displayRect.minY) * this.canvas.height;
+    return (this.displayRect.maxY - projectY)/(this.displayRect.maxY - this.displayRect.minY) * this.gridLayer.height;
+  }
+  /** Convert the project coordinate to the view coordinate */
+  projectToView(x: number, y: number): [number, number];
+  projectToView(xy: number[]): [number, number];
+  projectToView(...args: any[]): [number, number] {
+    var x, y: number;
+    if(typeof args[0] === 'number') {
+      x = args[0]; y = args[1];
+    } else if(args[0] as number[]) {
+      let arg = args[0] as number[];
+      if(arg.length !== 2) {
+        throw Error(`Invalid parameter ${arg}`);
+      }
+      x = arg[0]; y = arg[1];
+    }
+    return [this.p2vX(x), this.p2vY(y)];
+  }
+  /** Convert the view coordinate to the project coordinate */
+  viewToProject(x: number, y: number): [number, number];
+  viewToProject(xy: number[]): [number, number];
+  viewToProject(...args: any[]): [number, number] {
+    var x, y: number;
+    if(typeof args[0] === 'number') {
+      x = args[0]; y = args[1];
+    } else if(args[0] as number[]) {
+      let arg = args[0] as number[];
+      if(arg.length !== 2) {
+        throw Error(`Invalid parameter ${arg}`);
+      }
+      x = arg[0]; y = arg[1];
+    }
+    return [this.v2pX(x), this.v2pY(y)];
   }
 
   destruct(): void {
     this.container.removeChild(this.uiOverlay.container);
-    this.container.removeChild(this.canvas);
+    this.container.removeChild(this.gridLayer);
   }
 };  
