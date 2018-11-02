@@ -74,7 +74,11 @@ export default class GridCanvas {
   /** Flag to toggle grid display */
   get showGrids() { return this.showGridsFlag; }
   set showGrids(newVal) { this.showGridsFlag = newVal; this.display(); }
-  
+
+  /** Resolution of the canvas = canvas.width/canvas.clientWeight */
+  private _resolution = 1;
+  get resolution()        { return this._resolution; }
+  set resolution(newVal)  { this._resolution = newVal; this.display(); }
 
   /** Update canvas geometric settings */
   display = () => {
@@ -107,6 +111,9 @@ export default class GridCanvas {
     this.container.style.textAlign = 'left';
     this.container.style.position = 'relative';
 
+    // Determining resolution
+    this._resolution = window.devicePixelRatio || 1;
+
     // Create lower layer
     this.lowerLayer = document.createElement('canvas');
     this.lowerLayer.style.position = 'absolute';
@@ -114,8 +121,8 @@ export default class GridCanvas {
     this.lowerLayer.style.width = '100%';
     this.lowerLayer.style.height = '100%';
     this.container.appendChild(this.lowerLayer);
-    this.lowerLayer.width = this.lowerLayer.clientWidth;
-    this.lowerLayer.height = this.lowerLayer.clientHeight;
+    this.lowerLayer.width = this.lowerLayer.clientWidth * this.resolution;
+    this.lowerLayer.height = this.lowerLayer.clientHeight * this.resolution;
     // Create canvas
     this.gridLayer = document.createElement('canvas');
     this.gridLayer.style.position = 'absolute';
@@ -123,8 +130,8 @@ export default class GridCanvas {
     this.gridLayer.style.width = '100%';
     this.gridLayer.style.height = '100%';
     this.container.appendChild(this.gridLayer);
-    this.gridLayer.width = this.gridLayer.clientWidth;
-    this.gridLayer.height = this.gridLayer.clientHeight;
+    this.gridLayer.width = this.gridLayer.clientWidth * this.resolution;
+    this.gridLayer.height = this.gridLayer.clientHeight * this.resolution;
     // Create upper layer
     this.upperLayer = document.createElement('canvas');
     this.upperLayer.style.position = 'absolute';
@@ -132,13 +139,13 @@ export default class GridCanvas {
     this.upperLayer.style.width = '100%';
     this.upperLayer.style.height = '100%';
     this.container.appendChild(this.upperLayer);
-    this.upperLayer.width = this.upperLayer.clientWidth;
-    this.upperLayer.height = this.upperLayer.clientHeight;
+    this.upperLayer.width = this.upperLayer.clientWidth * this.resolution;
+    this.upperLayer.height = this.upperLayer.clientHeight * this.resolution;
 
     var resizeCallback = () => {
       const [ oldWidth, oldHeight ] = [ this.gridLayer.width, this.gridLayer.height ];
-      const newWidth = this.upperLayer.width = this.lowerLayer.width = this.gridLayer.width = this.container.clientWidth;
-      const newHeight = this.upperLayer.height = this.lowerLayer.height = this.gridLayer.height = this.container.clientHeight;
+      const newWidth = this.upperLayer.width = this.lowerLayer.width = this.gridLayer.width = this.container.clientWidth * this.resolution;
+      const newHeight = this.upperLayer.height = this.lowerLayer.height = this.gridLayer.height = this.container.clientHeight * this.resolution;
       // If the new width is larger than scaling with aspect fixed
       if(newWidth > newHeight / oldHeight * oldWidth) {
         // Make the display rect width fixed
@@ -367,9 +374,9 @@ export default class GridCanvas {
     if(!this.showGridsFlag) return;
 
     // Number of max horizontal grid lines
-    let nMaxHorizontal = Math.ceil(this.majorGridDensity * this.gridLayer.height);
+    let nMaxHorizontal = Math.ceil(this.majorGridDensity * this.gridLayer.clientHeight);
     // Number of max vertical grid lines
-    let nMaxVertical = Math.ceil(this.majorGridDensity * this.gridLayer.width);
+    let nMaxVertical = Math.ceil(this.majorGridDensity * this.gridLayer.clientWidth);
     // Check if the grid series is useable
     const checkGridUseability = (a: number[]) => {
       let max = Math.max.apply(this, a);
@@ -399,24 +406,26 @@ export default class GridCanvas {
     let minProjectDiff = Math.min.apply(this, useableGrid);
     let minViewDiff = Math.min.apply(this, useableGrid)/(this.displayRect.maxX - this.displayRect.minX)*this.gridLayer.width;
     let firstMinorHLineY = this.p2vY(Math.ceil(this.displayRect.minY / minProjectDiff) * minProjectDiff);
+    let majorGridWidth = this.majorGridWidth * this.resolution;
+    let minorGridWidth = this.minorGridWidth * this.resolution
     ctx.fillStyle = this.minorGridColor;
     for(let i = 0; i < nHMinorGridLines; i++) {
-      ctx.fillRect(0, firstMinorHLineY - i * minViewDiff - this.minorGridWidth/2, w, this.minorGridWidth);
+      ctx.fillRect(0, firstMinorHLineY - i * minViewDiff - minorGridWidth/2, w, minorGridWidth);
     }
     let firstMinorVLineX = this.p2vX(Math.ceil(this.displayRect.minX / minProjectDiff) * minProjectDiff);
     for(let i = 0; i < nVMinorGridLines; i++) {
-      ctx.fillRect(firstMinorVLineX + i * minViewDiff - this.minorGridWidth/2, 0, this.minorGridWidth, h);
+      ctx.fillRect(firstMinorVLineX + i * minViewDiff - minorGridWidth/2, 0, minorGridWidth, h);
     }
     let maxProjectDiff = Math.max.apply(this, useableGrid);
     let maxViewDiff = Math.max.apply(this, useableGrid)/(this.displayRect.maxX - this.displayRect.minX)*this.gridLayer.width;
     let firstMajorHLineY = this.p2vY(Math.ceil(this.displayRect.minY / maxProjectDiff) * maxProjectDiff);
     ctx.fillStyle = this.majorGridColor;
     for(let i = 0; i < nHMajorGridLines; i++) {
-      ctx.fillRect(0, firstMajorHLineY - i * maxViewDiff - this.majorGridWidth/2, w, this.majorGridWidth);
+      ctx.fillRect(0, firstMajorHLineY - i * maxViewDiff - majorGridWidth/2, w, majorGridWidth);
     }
     let firstMajorVLineX = this.p2vX(Math.ceil(this.displayRect.minX / maxProjectDiff) * maxProjectDiff);
     for(let i = 0; i < nVMajorGridLines; i++) {
-      ctx.fillRect(firstMajorVLineX + i * maxViewDiff - this.majorGridWidth/2, 0, this.majorGridWidth, h);
+      ctx.fillRect(firstMajorVLineX + i * maxViewDiff - majorGridWidth/2, 0, majorGridWidth, h);
     }
   }
   /**

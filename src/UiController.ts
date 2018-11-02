@@ -167,7 +167,7 @@ export default class UIOverlay {
       if(this.altDownFlag) {
         // TODO: Mouse location to global location
         let d = event.deltaY;
-        let [x, y] = [event.offsetX, event.offsetY];
+        let [x, y] = [event.offsetX * this.gridCanvas.resolution, event.offsetY * this.gridCanvas.resolution];
         gridCanvas.zoomDisplay(gridCanvas.v2pX(x), gridCanvas.v2pY(y), Math.exp(d/400));
       } else {
         if(this.shiftDownFlag) {
