@@ -138,7 +138,7 @@ export default class GridCanvas {
     var resizeCallback = () => {
       const [ oldWidth, oldHeight ] = [ this.gridLayer.width, this.gridLayer.height ];
       const newWidth = this.upperLayer.width = this.lowerLayer.width = this.gridLayer.width = this.container.clientWidth;
-      const newHeight = this.upperLayer.width = this.lowerLayer.width = this.gridLayer.height = this.container.clientHeight;
+      const newHeight = this.upperLayer.height = this.lowerLayer.height = this.gridLayer.height = this.container.clientHeight;
       // If the new width is larger than scaling with aspect fixed
       if(newWidth > newHeight / oldHeight * oldWidth) {
         // Make the display rect width fixed
