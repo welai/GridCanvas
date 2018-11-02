@@ -28,7 +28,7 @@ export default class GridCanvas {
    * You can modify this function by re-defining it
    * The redraw function is called when the viewport is changed
    */
-  redrawUpper(ctx: CanvasRenderingContext2D): void {}
+  redrawUpper: (ctx: CanvasRenderingContext2D) => void = () => {}
   /** The grid layer of the window, in essence an HTML canvas element */
   gridLayer: HTMLCanvasElement;
   /** The layer on the bottom of the grid layer */
@@ -38,7 +38,7 @@ export default class GridCanvas {
    * You can modify this function by re-defining it
    * The redraw function is called when the viewport is changed
    */
-  redrawLower(ctx: CanvasRenderingContext2D): void {}
+  redrawLower: (ctx: CanvasRenderingContext2D) => void = () => {}
 
   // Geometric properties
   /** The coordinary boundary of the project */
@@ -77,7 +77,7 @@ export default class GridCanvas {
   
 
   /** Update canvas geometric settings */
-  display() {
+  display = () => {
     let [minX, maxX, minY, maxY] = [
       this.displayRect.minX,
       this.displayRect.maxX,
@@ -423,28 +423,28 @@ export default class GridCanvas {
    * Convert the X coordinate in the view to the project coordinate
    * @param viewX       X coordinate in the viewport
    */
-  v2pX(viewX: number): number {
+  v2pX = (viewX: number): number => {
     return viewX/this.gridLayer.width*(this.displayRect.maxX - this.displayRect.minX) + this.displayRect.minX;
   }
   /**
    * Convert the Y coordinate in the view to the project coordinate
    * @param viewY       Y coordinate in the viewport
    */
-  v2pY(viewY: number): number {
+  v2pY = (viewY: number): number => {
     return this.displayRect.maxY - viewY/this.gridLayer.height*(this.displayRect.maxY - this.displayRect.minY);
   }
   /** 
    * Convert the Y coordinate in the project to the view coordinate
    * @param projectX    X coordinate in the project space
    */
-  p2vX(projectX: number): number {
+  p2vX = (projectX: number): number => {
     return (projectX - this.displayRect.minX)/(this.displayRect.maxX - this.displayRect.minX)*this.gridLayer.width;
   }
   /** 
    * Convert the Y coordinate in the project to the view coordinate
    * @param projectY    Y coordinate in the project space
    */
-  p2vY(projectY: number): number {
+  p2vY = (projectY: number): number => {
     return (this.displayRect.maxY - projectY)/(this.displayRect.maxY - this.displayRect.minY) * this.gridLayer.height;
   }
   /**
