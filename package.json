@@ -1,6 +1,6 @@
 {
   "name": "gridcanvas",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Canvas with view controlling and grids",
   "keywords": [
     "ui",

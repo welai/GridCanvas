@@ -442,6 +442,20 @@ export default class GridCanvas {
   v2pY = (viewY: number): number => {
     return this.displayRect.maxY - viewY/this.gridLayer.height*(this.displayRect.maxY - this.displayRect.minY);
   }
+  /**
+   * Convert the height in the view to height in the project coordinate
+   * @param viewH       Height in the view
+   */
+  v2pH = (viewH: number): number => {
+    return viewH / this.gridLayer.height * (this.displayRect.maxY - this.displayRect.minY);
+  }
+  /** 
+   * Convert the width in the view to width in the project coordinate
+   * @param viewW       Width in the view
+   */
+  v2pW = (viewW: number): number => {
+    return viewW / this.gridLayer.width * (this.displayRect.maxX - this.displayRect.minX);
+  }
   /** 
    * Convert the Y coordinate in the project to the view coordinate
    * @param projectX    X coordinate in the project space
@@ -455,6 +469,20 @@ export default class GridCanvas {
    */
   p2vY = (projectY: number): number => {
     return (this.displayRect.maxY - projectY)/(this.displayRect.maxY - this.displayRect.minY) * this.gridLayer.height;
+  }
+  /**
+   * Convert the height in the project to the view height
+   * @param projectH    Height in the project space
+   */
+  p2vH = (projectH: number): number => {
+    return projectH / (this.displayRect.maxY - this.displayRect.minY) * this.gridLayer.height;
+  }
+  /**
+   * Convert the width in the project to the view width
+   * @param projectW    Width in the project space
+   */
+  p2vW = (projectW: number): number => {
+    return projectW / (this.displayRect.maxX - this.displayRect.minX) * this.gridLayer.width;
   }
   /**
    * Convert the project coordinate to the view coordinate
