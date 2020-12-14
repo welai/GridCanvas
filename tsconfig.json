@@ -3,13 +3,13 @@
         "declaration": true,
         "lib": [ "ES2015", "DOM" ],
         "module": "commonjs",
-        "esModuleInterop": true,
         "noImplicitAny": true,
+        "noImplicitThis": true,
         "outDir": "types",
+        "sourceMap": true,
+        "strictFunctionTypes": true,
         "target": "es5",
-        "removeComments": true,
-        "preserveConstEnums": true,
-        "sourceMap": true
+        "forceConsistentCasingInFileNames": true
     },
     "include": [
         "src/**/*"

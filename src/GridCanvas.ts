@@ -1,7 +1,3 @@
-/**
- * @author  Celestial Phineas
- * @license MIT
- */
 import { Config, defaultConfig } from './Config';
 import { Rect, GeometricRect } from './Rect';
 import UIOverlay from './UiController';
