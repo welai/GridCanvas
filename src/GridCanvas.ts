@@ -270,9 +270,9 @@ export default class GridCanvas {
       || this.displayRect.minY === this.bound.minY && this.displayRect.maxY === this.bound.maxY))
       return;
     // Too small to scale
-    if (scale < 1 && this.uiOverlay.horizontalBar.upperRange - this.uiOverlay.horizontalBar.lowerRange < this.uiOverlay.horizontalBar.minDifference)
+    if (scale < 1 && this.uiOverlay.horizontalBar.upper - this.uiOverlay.horizontalBar.lower < this.uiOverlay.horizontalBar.minSpan)
       return;
-    if (scale < 1 && this.uiOverlay.verticalBar.upperRange - this.uiOverlay.verticalBar.lowerRange < this.uiOverlay.verticalBar.minDifference)
+    if (scale < 1 && this.uiOverlay.verticalBar.upper - this.uiOverlay.verticalBar.lower < this.uiOverlay.verticalBar.minSpan)
       return;
     let offsets: Rect = {
       minX: this.displayRect.minX - x,

@@ -114,3 +114,4 @@ package-lock.json
 
 # For this project
 doc/js
+dist/

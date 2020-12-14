@@ -1,14 +1,15 @@
 {
   "name": "gridcanvas",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Canvas with view controlling and grids",
+  "files": [ "/dist", "/types" ],
   "keywords": [
     "ui",
     "paperjs",
     "ui-components"
   ],
   "main": "./dist/gridcanvas.min.js",
-  "types": "./src/index.ts",
+  "types": "./types/index.d.ts",
   "scripts": {
     "build": "webpack",
     "clean": "rm -rf dist",
@@ -27,9 +28,9 @@
   "devDependencies": {
     "@types/node": "^10.7.1",
     "@types/webpack": "^4.4.10",
-    "acorn": "^5.7.1",
+    "acorn": "^5.7.4",
     "css-loader": "^1.0.0",
-    "npm": "^6.4.0",
+    "resize-observer-polyfill": "^1.5.0",
     "style-loader": "^0.23.1",
     "ts-loader": "^4.5.0",
     "ts-node": "^7.0.1",
@@ -38,7 +39,6 @@
     "webpack-cli": "^3.1.0"
   },
   "dependencies": {
-    "dual-range-bar": "^0.2.0",
-    "resize-observer-polyfill": "^1.5.0"
+    "dual-range-bar": "^1.0.0"
   }
 }

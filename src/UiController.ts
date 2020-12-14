@@ -1,5 +1,5 @@
 import GridCanvas from './GridCanvas';
-import * as dual from 'dual-range-bar';
+import { DualHRangeBar, DualVRangeBar } from 'dual-range-bar';
 import './style.css';
 
 /**
@@ -12,9 +12,9 @@ export default class UIOverlay {
   /** This area lies below the UI components, and works as the event receiver */
   eventActiveArea: HTMLElement;
   /** Horizontal dual range bar */
-  horizontalBar: dual.HRange;
+  horizontalBar: DualHRangeBar;
   /** Vertical dual range bar */
-  verticalBar: dual.VRange;
+  verticalBar: DualVRangeBar;
   /** Toggling grid button container */
   buttonContainer: HTMLElement;
   /** Button to toggle grid display */
@@ -54,9 +54,8 @@ export default class UIOverlay {
     hbar.style.position = 'relative';
     hbarContainer.appendChild(hbar);
     this.container.appendChild(hbarContainer);
-    this.horizontalBar = dual.HRange.getObject(hbar.id);
-    this.horizontalBar.lowerBound = 0;
-    this.horizontalBar.upperBound = 1;
+    this.horizontalBar = new DualHRangeBar(hbar, { 
+      minimizes: true, lowerBound: 0, upperBound: 1 });
     // Vertical dual range bar for scrolling
     let vbarContainer = document.createElement('div');
     vbarContainer.className = 'vbar-container';
@@ -73,9 +72,8 @@ export default class UIOverlay {
     vbar.style.position = 'relative';
     vbarContainer.appendChild(vbar);
     this.container.appendChild(vbarContainer);
-    this.verticalBar = dual.VRange.getObject(vbar.id);
-    this.verticalBar.lowerBound = 0;
-    this.verticalBar.upperBound = 1;
+    this.verticalBar = new DualVRangeBar(vbar, {
+      minimizes: true, lowerBound: 0, upperBound: 1 });
     
     // Grid toggling button
     let buttonContainer = this.buttonContainer = document.createElement('div');
@@ -85,7 +83,7 @@ export default class UIOverlay {
     buttonContainer.style.position = 'absolute';
     buttonContainer.style.right = '0px';
     buttonContainer.style.bottom = '0px';
-    buttonContainer.style.margin = '16px';
+    buttonContainer.style.margin = '10px';
     buttonContainer.style.zIndex = '1';
     let gridButton = this.gridButton = document.createElement('button');
     gridButton.className = 'grid-button';
@@ -96,9 +94,12 @@ export default class UIOverlay {
     }
     gridButton.style.width = '42px';
     gridButton.style.height = '42px';
+    gridButton.style.display = 'flex';
+    gridButton.style.alignItems = 'center';
+    gridButton.style.justifyContent = 'center';
     gridButton.innerHTML = `
   <svg version="1.1" class="icon" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-  viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
+  viewBox="0 0 100 100" style="width:42px;height:42px" xml:space="preserve">
     <rect x="10" y="10" width="24" height="24"/>
     <rect x="40" y="10" width="24" height="24"/>
     <rect x="70" y="10" width="24" height="24"/>
@@ -109,8 +110,6 @@ export default class UIOverlay {
     <rect x="40" y="70" width="24" height="24"/>
     <rect x="70" y="70" width="24" height="24"/>
   </svg>`
-    gridButton.style.lineHeight = '120%';
-    gridButton.style.textAlign = 'center';
     gridButton.addEventListener('click', (event) => {
       gridCanvas.showGrids = !gridCanvas.showGrids;
       if(gridCanvas.showGrids)
@@ -123,10 +122,8 @@ export default class UIOverlay {
 
     this.updateDifferences();
 
-    this.horizontalBar.addLowerRangeChangeCallback((val: number) => { this.syncViewByHorizontal(); });
-    this.horizontalBar.addUpperRangeChangeCallback((val: number) => { this.syncViewByHorizontal(); });
-    this.verticalBar.addLowerRangeChangeCallback((val: number) => { this.syncViewByVertical(); });
-    this.verticalBar.addUpperRangeChangeCallback((val: number) => { this.syncViewByVertical(); });
+    this.horizontalBar.addEventListener('update', this.syncViewByHorizontal);
+    this.verticalBar.addEventListener('update', this.syncViewByVertical);
 
     // Binding preview window area events
     var mac = false;
@@ -189,15 +186,15 @@ export default class UIOverlay {
     let rx = gridCanvas.gridLayer.width / (gridCanvas.bound.maxX - gridCanvas.bound.minX);
     let ry = gridCanvas.gridLayer.height / (gridCanvas.bound.maxY - gridCanvas.bound.minY);
     if (rx > ry) {
-      this.horizontalBar.relativeMinDifference = 0.1 * rx / ry;
-      this.horizontalBar.relativeMaxDifference = 1.0;
-      this.verticalBar.relativeMinDifference = 0.1;
-      this.verticalBar.relativeMaxDifference = 1.0 * ry / rx;
+      this.horizontalBar.minSpan = 0.1 * rx / ry;
+      this.horizontalBar.maxSpan = 1.0;
+      this.verticalBar.minSpan = 0.1;
+      this.verticalBar.maxSpan = 1.0 * ry / rx;
     } else {
-      this.horizontalBar.relativeMinDifference = 0.1;
-      this.horizontalBar.relativeMaxDifference = 1.0 * rx / ry;
-      this.verticalBar.relativeMinDifference = 0.1 * ry / rx;
-      this.verticalBar.relativeMaxDifference = 1.0;
+      this.horizontalBar.minSpan = 0.1;
+      this.horizontalBar.maxSpan = 1.0 * rx / ry;
+      this.verticalBar.minSpan = 0.1 * ry / rx;
+      this.verticalBar.maxSpan = 1.0;
     }
   }
 
@@ -210,18 +207,18 @@ export default class UIOverlay {
     let maxX = (gridCanvas.displayRect.maxX - gridCanvas.bound.minX)/boundWidth;
     let minY = (gridCanvas.bound.maxY - gridCanvas.displayRect.maxY)/boundHeight;
     let maxY = (gridCanvas.bound.maxY - gridCanvas.displayRect.minY)/boundHeight;
-    this.horizontalBar.setLowerRange(minX);
-    this.horizontalBar.setUpperRange(maxX);
-    this.verticalBar.setLowerRange(minY);
-    this.verticalBar.setUpperRange(maxY);
+    this.horizontalBar.lower = minX;
+    this.horizontalBar.upper = maxX;
+    this.verticalBar.lower = minY;
+    this.verticalBar.upper = maxY;
   }
 
   /** Synchronize the display rect with the UI elements & v.v. */
   // But these function do not actually refresh the view
-  syncViewByHorizontal() {
+  syncViewByHorizontal = () => {
     const gridCanvas = this.gridCanvas;
-    let lower = this.horizontalBar.lowerRange;
-    let upper = this.horizontalBar.upperRange;
+    let lower = this.horizontalBar.lower;
+    let upper = this.horizontalBar.upper;
     let minX = lower * (gridCanvas.bound.maxX - gridCanvas.bound.minX) + gridCanvas.bound.minX;
     let maxX = upper * (gridCanvas.bound.maxX - gridCanvas.bound.minX) + gridCanvas.bound.minX;
     gridCanvas.displayRect.setMinX(minX);
@@ -245,15 +242,12 @@ export default class UIOverlay {
         gridCanvas.display();
       }
     }
-    // Synchronize the changes to the scroll bars
-    this.verticalBar.setLowerRange((gridCanvas.bound.maxY - gridCanvas.displayRect.maxY) / (gridCanvas.bound.maxY - gridCanvas.bound.minY));
-    this.verticalBar.setUpperRange((gridCanvas.bound.maxY - gridCanvas.displayRect.minY) / (gridCanvas.bound.maxY - gridCanvas.bound.minY));
   }
   /** Synchronize the display rect with the UI elements & v.v. */
-  syncViewByVertical() {
+  syncViewByVertical = () => {
     const gridCanvas = this.gridCanvas;
-    let lower = 1 - this.verticalBar.upperRange;
-    let upper = 1 - this.verticalBar.lowerRange;
+    let lower = 1 - this.verticalBar.upper;
+    let upper = 1 - this.verticalBar.lower;
     let minY = lower * (gridCanvas.bound.maxY - gridCanvas.bound.minY) + gridCanvas.bound.minY;
     let maxY = upper * (gridCanvas.bound.maxY - gridCanvas.bound.minY) + gridCanvas.bound.minY;
     gridCanvas.displayRect.setMinY(minY);
@@ -277,8 +271,5 @@ export default class UIOverlay {
         gridCanvas.display();
       }
     }
-    // Synchronize the changes to the scroll bars
-    this.horizontalBar.setLowerRange((gridCanvas.displayRect.minX - gridCanvas.bound.minX) / (gridCanvas.bound.maxX - gridCanvas.bound.minX));
-    this.horizontalBar.setUpperRange((gridCanvas.displayRect.maxX - gridCanvas.bound.minX) / (gridCanvas.bound.maxX - gridCanvas.bound.minX));
   }
 }
