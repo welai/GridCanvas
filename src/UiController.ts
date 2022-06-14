@@ -207,10 +207,10 @@ export default class UIOverlay {
     let maxX = (gridCanvas.displayRect.maxX - gridCanvas.bound.minX)/boundWidth;
     let minY = (gridCanvas.bound.maxY - gridCanvas.displayRect.maxY)/boundHeight;
     let maxY = (gridCanvas.bound.maxY - gridCanvas.displayRect.minY)/boundHeight;
-    this.horizontalBar.lower = minX;
-    this.horizontalBar.upper = maxX;
-    this.verticalBar.lower = minY;
-    this.verticalBar.upper = maxY;
+    this.horizontalBar.lower = minX < 0 ? 0 : minX;
+    this.horizontalBar.upper = maxX > 1 ? 1 : maxX;
+    this.verticalBar.lower = minY < 0 ? 0 : minY;
+    this.verticalBar.upper = maxY > 1 ? 1 : maxY;
   }
 
   /** Synchronize the display rect with the UI elements & v.v. */
@@ -242,6 +242,7 @@ export default class UIOverlay {
         gridCanvas.display();
       }
     }
+    this.syncView();
   }
   /** Synchronize the display rect with the UI elements & v.v. */
   syncViewByVertical = () => {
@@ -271,5 +272,6 @@ export default class UIOverlay {
         gridCanvas.display();
       }
     }
+    this.syncView();
   }
 }
